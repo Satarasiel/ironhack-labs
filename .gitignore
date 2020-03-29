@@ -128,10 +128,13 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-.DS_Store
+# Ignoring some general files
+*.DS_Store
 *.csv
+*.json
 *.txt
 *.xls
+*.xlsx
 *.png
 *.jpg
 *.zip
