@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>ContentFilters</key>
+	<dict/>
+	<key>auto_connect</key>
+	<true/>
+	<key>data</key>
+	<dict>
+		<key>connection</key>
+		<dict>
+			<key>database</key>
+			<string>Publications</string>
+			<key>host</key>
+			<string>127.0.0.1</string>
+			<key>kcid</key>
+			<string>-8428358310302193774</string>
+			<key>name</key>
+			<string>localhost</string>
+			<key>rdbms_type</key>
+			<string>mysql</string>
+			<key>sslCACertFileLocation</key>
+			<string></string>
+			<key>sslCACertFileLocationEnabled</key>
+			<integer>0</integer>
+			<key>sslCertificateFileLocation</key>
+			<string></string>
+			<key>sslCertificateFileLocationEnabled</key>
+			<integer>0</integer>
+			<key>sslKeyFileLocation</key>
+			<string></string>
+			<key>sslKeyFileLocationEnabled</key>
+			<integer>0</integer>
+			<key>type</key>
+			<string>SPTCPIPConnection</string>
+			<key>useSSL</key>
+			<integer>0</integer>
+			<key>user</key>
+			<string>root</string>
+		</dict>
+		<key>session</key>
+		<dict>
+			<key>connectionEncoding</key>
+			<string>utf8</string>
+			<key>contentFilterV2</key>
+			<dict>
+				<key>children</key>
+				<array/>
+				<key>filterClass</key>
+				<string>groupNode</string>
+				<key>isConjunction</key>
+				<true/>
+			</dict>
+			<key>contentPageNumber</key>
+			<integer>1</integer>
+			<key>contentSelection</key>
+			<data>
+			YnBsaXN0MDDUAQIDBAUGBwpYJHZlcnNpb25ZJGFyY2hpdmVyVCR0
+			b3BYJG9iamVjdHMSAAGGoF8QD05TS2V5ZWRBcmNoaXZlctEICVRk
+			YXRhgAGuCwwZGhscHSEoLTE1ODxVJG51bGzTDQ4PEBQYV05TLmtl
+			eXNaTlMub2JqZWN0c1YkY2xhc3OjERITgAKAA4AEoxUWF4AFgAaA
+			CIANVHR5cGVUcm93c1RrZXlzXxAmU2VsZWN0aW9uRGV0YWlsVHlw
+			ZVByaW1hcnlLZXllZERldGFpbHPTDQ4PHh8goKCAB9IiIyQlWiRj
+			bGFzc25hbWVYJGNsYXNzZXNfEBNOU011dGFibGVEaWN0aW9uYXJ5
+			oyQmJ1xOU0RpY3Rpb25hcnlYTlNPYmplY3TSDg8pLKIqK4AJgAuA
+			DNIPLi8wWU5TLnN0cmluZ4AKVWF1X2lk0iIjMjNfEA9OU011dGFi
+			bGVTdHJpbmejMjQnWE5TU3RyaW5n0g8uLzeAClh0aXRsZV9pZNIi
+			Izk6Xk5TTXV0YWJsZUFycmF5ozk7J1dOU0FycmF50iIjJj2iJicA
+			CAARABoAJAApADIANwBJAEwAUQBTAGIAaABvAHcAggCJAI0AjwCR
+			AJMAlwCZAJsAnQCfAKQAqQCuANcA3gDfAOAA4gDnAPIA+wERARUB
+			IgErATABMwE1ATcBOQE+AUgBSgFQAVUBZwFrAXQBeQF7AYQBiQGY
+			AZwBpAGpAAAAAAAAAgEAAAAAAAAAPgAAAAAAAAAAAAAAAAAAAaw=
+			</data>
+			<key>contentSortColIsAsc</key>
+			<true/>
+			<key>contentViewport</key>
+			<string>{{0, 0}, {1055.5, 791}}</string>
+			<key>isToolbarVisible</key>
+			<true/>
+			<key>queries</key>
+			<string># CHALLENGE 1 - WHO HAVE PUBLISHED WHAT AT WHERE?
+
+SELECT aut.au_id AS 'Author ID', aut.au_lname AS 'LAST NAME', aut.au_fname AS 'FIRST NAME', ta.title_id AS 'Title ID'
+FROM publications.authors AS aut # we have to add aut before all the things we want that come from that table - before the first 3 vars
+LEFT JOIN publications.titleauthor AS ta
+ON aut.au_id = ta.au_id;
+
+
+SELECT aut.au_id AS 'Author ID', aut.au_lname AS 'LAST NAME', aut.au_fname AS 'FIRST NAME'
+FROM publications.authors AS aut
+LEFT JOIN publications.titleauthor AS ta
+ON aut.au_id = ta.au_id;
+
+
+# ZÉ'S CODE
+SELECT auts.au_id AS 'AUTHOR ID', auts.au_fname AS 'LAST NAME', auts.au_lname AS 'FIRST NAME', title.title AS 'TITLE', pub.pub_name AS 'PUBLISHER'
+FROM publications.authors AS auts
+LEFT JOIN publications.titleauthor AS ta
+ON auts.au_id = ta.au_id
+LEFT JOIN publications.titles AS title
+ON ta.title_id = title.title_id
+LEFT JOIN publications.publishers AS pub
+ON title.pub_id = pub.pub_id;
+# SEEMS LIKE THIS GOT 4 NULLS IN TITLE.
+
+
+SELECT COUNT(*) FROM titleauthor;
+
+
+# BEATRIZ'S CODE
+SELECT a.au_id AS 'AUTHOR ID', a.au_fname 'FIRST NAME', a.au_lname 'LAST NAME', ti.title 'TITLE', p.pub_name 'PUBLISHER'
+FROM AUTHORS a, publishers p, titleauthor ta, titles ti # seems like 'as' is not needed here, for some reason
+WHERE a.au_id = ta.au_id
+AND ta.title_id = ti.title_id
+AND ti.pub_id = p.pub_id;
+# THIS SEEMS TO WORK BETTER AND IS MORE CONCISE. ALSO, IT DIDN'T GET ANY NULLS LIKE THE CODE ABOVE.
+
+
+
+# CHALLENGE 2 - WHO HAVE PUBLISHED HOW MANY AT WHERE?
+
+CREATE TEMPORARY TABLE testing
+SELECT a.au_id AS 'AUTHOR ID', a.au_fname AS 'FIRST NAME', a.au_lname AS 'LAST NAME', p.pub_name AS 'PUBLISHER', COUNT(ti.title) AS 'test2'
+FROM AUTHORS a, publishers p, titleauthor ta, titles ti
+WHERE a.au_id = ta.au_id
+AND ta.title_id = ti.title_id
+AND ti.pub_id = p.pub_id
+GROUP BY a.au_id, a.au_fname, a.au_lname, p.pub_name; # here it seems to need all the vars in 'select' except the counting one
+
+
+SELECT * FROM testing;
+
+#DROP TEMPORARY TABLE testing;
+
+SELECT test2
+FROM testing;
+
+
+# sub-query strange thing
+SELECT sum(test2)
+FROM (SELECT a.au_id AS 'AUTHOR ID', a.au_fname AS 'FIRST NAME', a.au_lname AS 'LAST NAME', p.pub_name AS 'PUBLISHER', COUNT(ti.title) AS 'test2'
+FROM AUTHORS a, publishers p, titleauthor ta, titles ti
+WHERE a.au_id = ta.au_id
+AND ta.title_id = ti.title_id
+AND ti.pub_id = p.pub_id
+GROUP BY a.au_id, a.au_fname, a.au_lname, p.pub_name) summary;
+
+
+
+
+
+
+
+
+
+
+
+
+</string>
+			<key>table</key>
+			<string>titleauthor</string>
+			<key>view</key>
+			<string>SP_VIEW_CUSTOMQUERY</string>
+			<key>windowVerticalDividerPosition</key>
+			<real>385.5</real>
+		</dict>
+	</dict>
+	<key>encrypted</key>
+	<false/>
+	<key>format</key>
+	<string>connection</string>
+	<key>queryFavorites</key>
+	<array/>
+	<key>queryHistory</key>
+	<array>
+		<string>SELECT test2
+FROM testing</string>
+		<string># doesn't seem TO WORK :/
+
+
+
+SELECT sum(test2)
+FROM (SELECT a.au_id AS 'AUTHOR ID', a.au_fname AS 'FIRST NAME', a.au_lname AS 'LAST NAME', p.pub_name AS 'PUBLISHER', COUNT(ti.title) AS 'test2'
+FROM AUTHORS a, publishers p, titleauthor ta, titles ti
+WHERE a.au_id = ta.au_id
+AND ta.title_id = ti.title_id
+AND ti.pub_id = p.pub_id
+GROUP BY a.au_id, a.au_fname, a.au_lname, p.pub_name) summary</string>
+		<string># doesn't seem TO WORK :/
+
+SELECT sum(test2)
+FROM testing</string>
+		<string># here it seems to need all the vars in 'select' except the counting one
+
+
+SELECT * FROM testing</string>
+		<string># THIS SEEMS TO WORK BETTER AND IS MORE CONCISE. ALSO, IT DIDN'T GET ANY NULLS LIKE THE CODE ABOVE.
+
+
+
+# CHALLENGE 2 - WHO HAVE PUBLISHED HOW MANY AT WHERE?
+
+CREATE TEMPORARY TABLE testing
+SELECT a.au_id AS 'AUTHOR ID', a.au_fname AS 'FIRST NAME', a.au_lname AS 'LAST NAME', p.pub_name AS 'PUBLISHER', COUNT(ti.title) AS 'test2'
+FROM AUTHORS a, publishers p, titleauthor ta, titles ti
+WHERE a.au_id = ta.au_id
+AND ta.title_id = ti.title_id
+AND ti.pub_id = p.pub_id
+GROUP BY a.au_id, a.au_fname, a.au_lname, p.pub_name</string>
+		<string>DROP TEMPORARY TABLE testing</string>
+		<string>DELETE testing</string>
+		<string>DROP testing</string>
+		<string># THIS SEEMS TO WORK BETTER AND IS MORE CONCISE. ALSO, IT DIDN'T GET ANY NULLS LIKE THE CODE ABOVE.
+
+
+
+# CHALLENGE 2 - WHO HAVE PUBLISHED HOW MANY AT WHERE?
+
+#CREATE TEMPORARY TABLE testing
+SELECT a.au_id AS 'AUTHOR ID', a.au_fname AS 'FIRST NAME', a.au_lname AS 'LAST NAME', p.pub_name AS 'PUBLISHER', COUNT(ti.title) AS 'test2'
+FROM AUTHORS a, publishers p, titleauthor ta, titles ti
+WHERE a.au_id = ta.au_id
+AND ta.title_id = ti.title_id
+AND ti.pub_id = p.pub_id
+GROUP BY a.au_id, a.au_fname, a.au_lname, p.pub_name</string>
+		<string># doesn't seem TO WORK :/
+
+SELECT sum(zip) FROM AUTHORS</string>
+		<string>SELECT COUNT(ti.title)
+FROM testing</string>
+		<string># THIS SEEMS TO WORK BETTER AND IS MORE CONCISE. ALSO, IT DIDN'T GET ANY NULLS LIKE THE CODE ABOVE.
+
+
+
+# CHALLENGE 2 - WHO HAVE PUBLISHED HOW MANY AT WHERE?
+
+#CREATE TEMPORARY TABLE testing
+SELECT a.au_id AS 'AUTHOR ID', a.au_fname AS 'FIRST NAME', a.au_lname AS 'LAST NAME', p.pub_name AS 'PUBLISHER', COUNT(ti.title)
+FROM AUTHORS a, publishers p, titleauthor ta, titles ti
+WHERE a.au_id = ta.au_id
+AND ta.title_id = ti.title_id
+AND ti.pub_id = p.pub_id
+GROUP BY a.au_id, a.au_fname, a.au_lname, p.pub_name</string>
+		<string>SELECT SUM('TITLE COUNT')
+FROM testing</string>
+		<string>SELECT SUM(TITLE COUNT)
+FROM testing</string>
+		<string># THIS SEEMS TO WORK BETTER AND IS MORE CONCISE. ALSO, IT DIDN'T GET ANY NULLS LIKE THE CODE ABOVE.
+
+
+
+# CHALLENGE 2 - WHO HAVE PUBLISHED HOW MANY AT WHERE?
+
+CREATE TEMPORARY TABLE testing
+SELECT a.au_id AS 'AUTHOR ID', a.au_fname AS 'FIRST NAME', a.au_lname AS 'LAST NAME', p.pub_name AS 'PUBLISHER', COUNT(ti.title) AS 'TITLE COUNT'
+FROM AUTHORS a, publishers p, titleauthor ta, titles ti
+WHERE a.au_id = ta.au_id
+AND ta.title_id = ti.title_id
+AND ti.pub_id = p.pub_id
+GROUP BY a.au_id, a.au_fname, a.au_lname, p.pub_name</string>
+		<string># doesn't seem to work :/
+
+SELECT sum(zip) FROM AUTHORS</string>
+		<string>SELECT SUM(TITLE COUNT)
+FROM HELP</string>
+		<string># here it seems to need all the vars in 'select' except the counting one
+
+
+SELECT * FROM HELP</string>
+		<string># THIS SEEMS TO WORK BETTER AND IS MORE CONCISE. ALSO, IT DIDN'T GET ANY NULLS LIKE THE CODE ABOVE.
+
+
+
+# CHALLENGE 2 - WHO HAVE PUBLISHED HOW MANY AT WHERE?
+
+#CREATE TEMPORARY TABLE HELP
+SELECT a.au_id AS 'AUTHOR ID', a.au_fname AS 'FIRST NAME', a.au_lname AS 'LAST NAME', p.pub_name AS 'PUBLISHER', COUNT(ti.title) AS 'TITLE COUNT'
+FROM AUTHORS a, publishers p, titleauthor ta, titles ti
+WHERE a.au_id = ta.au_id
+AND ta.title_id = ti.title_id
+AND ti.pub_id = p.pub_id
+GROUP BY a.au_id, a.au_fname, a.au_lname, p.pub_name</string>
+		<string># SEEMS LIKE THIS GOT 4 NULLS IN TITLE.
+
+
+SELECT COUNT(*) FROM titleauthor</string>
+	</array>
+	<key>rdbms_type</key>
+	<string>mysql</string>
+	<key>rdbms_version</key>
+	<string>8.0.19</string>
+	<key>version</key>
+	<integer>1</integer>
+</dict>
+</plist>
