@@ -1,0 +1,565 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>ContentFilters</key>
+	<dict/>
+	<key>auto_connect</key>
+	<true/>
+	<key>data</key>
+	<dict>
+		<key>connection</key>
+		<dict>
+			<key>database</key>
+			<string>Publications</string>
+			<key>host</key>
+			<string>127.0.0.1</string>
+			<key>kcid</key>
+			<string>-8428358310302193774</string>
+			<key>name</key>
+			<string>localhost</string>
+			<key>rdbms_type</key>
+			<string>mysql</string>
+			<key>sslCACertFileLocation</key>
+			<string></string>
+			<key>sslCACertFileLocationEnabled</key>
+			<integer>0</integer>
+			<key>sslCertificateFileLocation</key>
+			<string></string>
+			<key>sslCertificateFileLocationEnabled</key>
+			<integer>0</integer>
+			<key>sslKeyFileLocation</key>
+			<string></string>
+			<key>sslKeyFileLocationEnabled</key>
+			<integer>0</integer>
+			<key>type</key>
+			<string>SPTCPIPConnection</string>
+			<key>useSSL</key>
+			<integer>0</integer>
+			<key>user</key>
+			<string>root</string>
+		</dict>
+		<key>session</key>
+		<dict>
+			<key>connectionEncoding</key>
+			<string>utf8mb4</string>
+			<key>contentFilterV2</key>
+			<dict>
+				<key>children</key>
+				<array/>
+				<key>filterClass</key>
+				<string>groupNode</string>
+				<key>isConjunction</key>
+				<true/>
+			</dict>
+			<key>contentPageNumber</key>
+			<integer>1</integer>
+			<key>contentSelection</key>
+			<data>
+			YnBsaXN0MDDUAQIDBAUGBwpYJHZlcnNpb25ZJGFyY2hpdmVyVCR0
+			b3BYJG9iamVjdHMSAAGGoF8QD05TS2V5ZWRBcmNoaXZlctEICVRk
+			YXRhgAGoCwwXGBkaHiVVJG51bGzTDQ4PEBMWV05TLmtleXNaTlMu
+			b2JqZWN0c1YkY2xhc3OiERKAAoADohQVgASABYAHVHR5cGVUcm93
+			c18QHVNlbGVjdGlvbkRldGFpbFR5cGVOU0luZGV4U2V00hsPHB1c
+			TlNSYW5nZUNvdW50EACABtIfICEiWiRjbGFzc25hbWVYJGNsYXNz
+			ZXNaTlNJbmRleFNldKIjJFpOU0luZGV4U2V0WE5TT2JqZWN00h8g
+			JidcTlNEaWN0aW9uYXJ5oiYkAAgAEQAaACQAKQAyADcASQBMAFEA
+			UwBcAGIAaQBxAHwAgwCGAIgAigCNAI8AkQCTAJgAnQC9AMIAzwDR
+			ANMA2ADjAOwA9wD6AQUBDgETASAAAAAAAAACAQAAAAAAAAAoAAAA
+			AAAAAAAAAAAAAAABIw==
+			</data>
+			<key>contentSortColIsAsc</key>
+			<true/>
+			<key>contentViewport</key>
+			<string>{{0, 0}, {1603, 931}}</string>
+			<key>isToolbarVisible</key>
+			<true/>
+			<key>queries</key>
+			<string># CHALLENGE 1 - Most Profiting Authors
+
+# STEP 1 - Calculating the royalties of each sale for each author
+# sales_royalty = titles.price * sales.qty * titles.royalty / 100 * titleauthor.royaltyper / 100
+
+SELECT tt.title_id, aut.au_id, (tt.price * sales.qty * tt.royalty / 100 * ta.royaltyper / 100) AS 'sales_royalties'
+FROM titleauthor AS ta
+INNER JOIN publications.authors AS aut
+	ON aut.au_id = ta.au_id
+INNER JOIN titles AS tt
+	ON tt.title_id = ta.title_id
+INNER JOIN sales
+	ON tt.title_id = sales.title_id;
+
+
+# STEP 2 - Aggregating the total royalties FOR EACH title FOR EACH author
+SELECT tt.title_id, aut.au_id, ROUND(SUM((tt.price * sales.qty * tt.royalty / 100 * ta.royaltyper / 100)), 4) AS 'total_royalties'
+FROM titleauthor AS ta
+INNER JOIN publications.authors AS aut
+	ON aut.au_id = ta.au_id
+INNER JOIN titles AS tt
+	ON tt.title_id = ta.title_id
+INNER JOIN sales
+	ON tt.title_id = sales.title_id
+GROUP BY 1, 2;
+
+
+# STEP 3 - Calculating the total profits of each author by aggregating the advance and total royalties of each title
+SELECT aut.au_id, CONCAT(aut.au_fname, ' ', aut.au_lname) AS 'author_name', ROUND(SUM((tt.price * sales.qty * tt.royalty / 100 * ta.royaltyper / 100) + tt.advance), 4) AS 'total_profits'
+FROM titleauthor AS ta
+INNER JOIN AUTHORS AS aut
+	ON aut.au_id = ta.au_id
+INNER JOIN titles AS tt
+	ON tt.title_id = ta.title_id
+INNER JOIN sales
+	ON tt.title_id = sales.title_id
+GROUP BY 1
+#HAVING total_profits &gt; 10000  # extra filter we could apply here
+ORDER BY 3 DESC
+LIMIT 3; # getting the top 3 most profitable authors
+
+
+
+
+
+
+# MORE COMPLEX SOLUTION - FROM COLLEAGUE: https://github.com/jonnyteronni/lab-advanced-mysql/blob/master/solutions.sql
+# with some slight changes I made
+# I noticed our profit values aren't matching, for some reason...
+WITH
+	temp1 AS (
+		SELECT tt.title_id,
+		ta.au_id,
+		tt.advance,
+		tt.price * sa.qty * tt.royalty / 100 * ta.royaltyper / 100 AS 'sales_royalties'
+		FROM titles AS tt
+		INNER JOIN sales AS sa
+			ON tt.title_id = sa.title_id
+		INNER JOIN titleauthor AS ta
+			ON tt.title_id = ta.title_id),
+		
+	temp2 AS (
+		SELECT temp1.advance, temp1.title_id, temp1.au_id, SUM(temp1.sales_royalties) AS 'total_sales'
+		FROM temp1
+		GROUP BY 1, 2, 3)
+	
+		
+SELECT temp2.au_id, ROUND(SUM(temp2.advance + temp2.total_sales), 4) AS 'profit'
+FROM temp2
+GROUP BY 1
+ORDER BY 2 DESC
+LIMIT 3;
+
+
+
+# CHALLENGE 3 - Creating a permanent table about the most profiting authors
+CREATE TABLE most_profiting_authors
+SELECT aut.au_id, CONCAT(aut.au_fname, ' ', aut.au_lname) AS 'author_name', ROUND(SUM((tt.price * sales.qty * tt.royalty / 100 * ta.royaltyper / 100) + tt.advance), 4) AS 'total_profits'
+FROM titleauthor AS ta
+INNER JOIN AUTHORS AS aut
+	ON aut.au_id = ta.au_id
+INNER JOIN titles AS tt
+	ON tt.title_id = ta.title_id
+INNER JOIN sales
+	ON tt.title_id = sales.title_id
+GROUP BY 1;
+
+# Checking the result
+SELECT * FROM most_profiting_authors;
+</string>
+			<key>table</key>
+			<string>most_profiting_authors</string>
+			<key>view</key>
+			<string>SP_VIEW_CUSTOMQUERY</string>
+			<key>windowVerticalDividerPosition</key>
+			<real>318</real>
+		</dict>
+	</dict>
+	<key>encrypted</key>
+	<false/>
+	<key>format</key>
+	<string>connection</string>
+	<key>queryFavorites</key>
+	<array/>
+	<key>queryHistory</key>
+	<array>
+		<string># Checking the result
+SELECT * FROM most_profiting_authors</string>
+		<string># CHALLENGE 3 - Creating a permanent table about the most profiting authors
+CREATE TABLE most_profiting_authors
+SELECT aut.au_id, CONCAT(aut.au_fname, ' ', aut.au_lname) AS 'author_name', ROUND(SUM((tt.price * sales.qty * tt.royalty / 100 * ta.royaltyper / 100) + tt.advance), 4) AS 'total_profits'
+FROM titleauthor AS ta
+INNER JOIN AUTHORS AS aut
+	ON aut.au_id = ta.au_id
+INNER JOIN titles AS tt
+	ON tt.title_id = ta.title_id
+INNER JOIN sales
+	ON tt.title_id = sales.title_id
+GROUP BY 1</string>
+		<string>SELECT * FROM most_profiting_authors</string>
+		<string># STEP 3 - Calculating the total profits of each author by aggregating the advance and total royalties of each title
+SELECT aut.au_id, CONCAT(aut.au_fname, ' ', aut.au_lname) AS 'author_name', ROUND(SUM((tt.price * sales.qty * tt.royalty / 100 * ta.royaltyper / 100) + tt.advance), 4) AS 'total_profits'
+FROM titleauthor AS ta
+INNER JOIN AUTHORS AS aut
+	ON aut.au_id = ta.au_id
+INNER JOIN titles AS tt
+	ON tt.title_id = ta.title_id
+INNER JOIN sales
+	ON tt.title_id = sales.title_id
+GROUP BY 1
+#HAVING total_profits &gt; 10000  # extra filter we could apply here
+ORDER BY 3 DESC
+LIMIT 3</string>
+		<string># getting the top 3 most profitable authors
+
+
+
+
+
+
+# MORE COMPLEX SOLUTION - FROM COLLEAGUE: https://github.com/jonnyteronni/lab-advanced-mysql/blob/master/solutions.sql
+# with some slight changes I made
+# I noticed are profit values aren't matching, for some reason...
+WITH
+	temp1 AS (
+		SELECT tt.title_id,
+		ta.au_id,
+		tt.advance,
+		tt.price * sa.qty * tt.royalty / 100 * ta.royaltyper / 100 AS 'sales_royalties'
+		FROM titles AS tt
+		INNER JOIN sales AS sa
+			ON tt.title_id = sa.title_id
+		INNER JOIN titleauthor AS ta
+			ON tt.title_id = ta.title_id),
+		
+	temp2 AS (
+		SELECT temp1.advance, temp1.title_id, temp1.au_id, SUM(temp1.sales_royalties) AS 'total_sales'
+		FROM temp1
+		GROUP BY 1, 2, 3)
+	
+		
+SELECT temp2.au_id, ROUND(SUM(temp2.advance + temp2.total_sales), 4) AS 'profit'
+FROM temp2
+GROUP BY 1
+ORDER BY 2 DESC
+LIMIT 3</string>
+		<string># STEP 3 - Calculating the total profits of each author by aggregating the advance and total royalties of each title
+SELECT aut.au_id, CONCAT(aut.au_fname, ' ', aut.au_lname) AS 'author_name', ROUND(SUM((tt.price * sales.qty * tt.royalty / 100 * ta.royaltyper / 100) + tt.advance), 4) AS 'total_profits'
+FROM titleauthor AS ta
+INNER JOIN AUTHORS AS aut
+	ON aut.au_id = ta.au_id
+INNER JOIN titles AS tt
+	ON tt.title_id = ta.title_id
+INNER JOIN sales
+	ON tt.title_id = sales.title_id
+GROUP BY 1
+#HAVING total_profits &gt; 10000  # extra filter we could apply here
+ORDER BY 3 DESC</string>
+		<string># STEP 2 - Aggregating the total royalties FOR EACH title FOR EACH author
+SELECT tt.title_id, aut.au_id, ROUND(SUM((tt.price * sales.qty * tt.royalty / 100 * ta.royaltyper / 100)), 4) AS 'total_royalties'
+FROM titleauthor AS ta
+INNER JOIN publications.authors AS aut
+	ON aut.au_id = ta.au_id
+INNER JOIN titles AS tt
+	ON tt.title_id = ta.title_id
+INNER JOIN sales
+	ON tt.title_id = sales.title_id
+GROUP BY 1, 2</string>
+		<string># getting the top 3 authors
+
+
+
+
+
+
+# MORE COMPLEX SOLUTION - FROM COLLEAGUE: https://github.com/jonnyteronni/lab-advanced-mysql/blob/master/solutions.sql
+# with some slight changes I made
+WITH
+	temp1 AS (
+		SELECT tt.title_id,
+		ta.au_id,
+		tt.advance,
+		tt.price * sa.qty * tt.royalty / 100 * ta.royaltyper / 100 AS 'sales_royalties'
+		FROM titles AS tt
+		INNER JOIN sales AS sa
+			ON tt.title_id = sa.title_id
+		INNER JOIN titleauthor AS ta
+			ON tt.title_id = ta.title_id),
+		
+	temp2 AS (
+		SELECT temp1.advance, temp1.title_id, temp1.au_id, SUM(temp1.sales_royalties) AS 'total_sales'
+		FROM temp1
+		GROUP BY 1, 2, 3)
+	
+		
+SELECT temp2.au_id, ROUND(SUM(temp2.advance + temp2.total_sales), 4) AS 'profit'
+FROM temp2
+GROUP BY 1
+ORDER BY 2 DESC
+LIMIT 3</string>
+		<string>LIMIT 3</string>
+		<string>#LIMIT 3; # getting the top 3 authors
+
+
+
+
+
+
+# MORE COMPLEX SOLUTION - FROM COLLEAGUE: https://github.com/jonnyteronni/lab-advanced-mysql/blob/master/solutions.sql
+# with some slight changes I made
+WITH
+	temp1 AS (
+		SELECT tt.title_id,
+		ta.au_id,
+		tt.advance,
+		tt.price * sa.qty * tt.royalty / 100 * ta.royaltyper / 100 AS 'sales_royalties'
+		FROM titles AS tt
+		INNER JOIN sales AS sa
+			ON tt.title_id = sa.title_id
+		INNER JOIN titleauthor AS ta
+			ON tt.title_id = ta.title_id),
+		
+	temp2 AS (
+		SELECT temp1.advance, temp1.title_id, temp1.au_id, SUM(temp1.sales_royalties) AS 'total_sales'
+		FROM temp1
+		GROUP BY 1, 2, 3)
+	
+		
+SELECT temp2.au_id, ROUND(SUM(temp2.advance + temp2.total_sales), 4) AS 'profit'
+FROM temp2
+GROUP BY 1
+ORDER BY 2 DESC
+LIMIT 3</string>
+		<string>#LIMIT 3; # getting the top 3 authors
+
+
+
+
+
+
+# MORE COMPLEX SOLUTION - FROM COLLEAGUE: https://github.com/jonnyteronni/lab-advanced-mysql/blob/master/solutions.sql
+# with some slight changes I made
+WITH
+	temp1 AS (
+		SELECT tt.title_id,
+		ta.au_id,
+		tt.advance,
+		tt.price * sa.qty * tt.royalty / 100 * ta.royaltyper / 100 AS 'sales_royalties'
+		FROM titles AS tt
+		INNER JOIN sales AS sa
+			ON tt.title_id = sa.title_id
+		INNER JOIN titleauthor AS ta
+			ON tt.title_id = ta.title_id),
+		
+	temp2 AS (
+		SELECT temp1.advance, temp1.title_id, temp1.au_id, SUM(temp1.sales_royalties) AS total_sales
+		FROM temp1
+		GROUP BY 1, 2, 3)
+	
+		
+SELECT temp2.au_id, ROUND(SUM(temp2.advance + temp2.total_sales), 4) AS 'profit'
+FROM temp2
+GROUP BY 1
+ORDER BY 2 DESC
+LIMIT 3</string>
+		<string>#LIMIT 3; # getting the top 3 authors
+
+
+
+
+
+
+# MORE COMPLEX SOLUTION - FROM COLLEAGUE: https://github.com/jonnyteronni/lab-advanced-mysql/blob/master/solutions.sql
+# with some slight changes I made
+WITH
+	temp1 AS (
+		SELECT tt.title_id,
+		ta.au_id,
+		tt.advance,
+		tt.price * sa.qty * tt.royalty / 100 * ta.royaltyper / 100 AS 'sales_royalties'
+		FROM titles AS tt
+		INNER JOIN sales AS sa
+			ON tt.title_id = sa.title_id
+		INNER JOIN titleauthor AS ta
+			ON tt.title_id = ta.title_id),
+		
+	temp2 AS (
+		SELECT temp1.advance, temp1.title_id, temp1.au_id, SUM(temp1.sales_royalties) AS total_sales
+		FROM temp1
+		GROUP BY 1, 2, 3)
+	
+		
+SELECT temp2.au_id, ROUND(SUM(temp2.advance) + SUM(temp2.total_sales), 4) AS 'profit'
+FROM temp2
+GROUP BY 1
+ORDER BY 2 DESC
+LIMIT 3</string>
+		<string># STEP 3 - Calculating the total profits of each author by aggregating the advance and total royalties of each title
+SELECT aut.au_id, CONCAT(aut.au_fname, ' ', aut.au_lname) AS 'author_name', ROUND(SUM(tt.price * sales.qty * tt.royalty / 100 * ta.royaltyper / 100 + tt.advance), 4) AS 'total_profits'
+FROM titleauthor AS ta
+INNER JOIN AUTHORS AS aut
+	ON aut.au_id = ta.au_id
+INNER JOIN titles AS tt
+	ON tt.title_id = ta.title_id
+INNER JOIN sales
+	ON tt.title_id = sales.title_id
+GROUP BY 1
+#HAVING total_profits &gt; 10000  # extra filter we could apply here
+ORDER BY 3 DESC</string>
+		<string># STEP 3 - Calculating the total profits of each author by aggregating the advance and total royalties of each title
+SELECT aut.au_id, CONCAT(aut.au_fname, ' ', aut.au_lname) AS 'author_name', ROUND(SUM(tt.price * sales.qty * tt.royalty / 100 * ta.royaltyper / 100 + tt.advance, 4) AS 'total_profits'
+FROM titleauthor AS ta
+INNER JOIN AUTHORS AS aut
+	ON aut.au_id = ta.au_id
+INNER JOIN titles AS tt
+	ON tt.title_id = ta.title_id
+INNER JOIN sales
+	ON tt.title_id = sales.title_id
+GROUP BY 1
+#HAVING total_profits &gt; 10000  # extra filter we could apply here
+ORDER BY 3 DESC</string>
+		<string>#LIMIT 3; # getting the top 3 authors
+
+
+
+
+
+
+# MORE COMPLEX SOLUTION - FROM COLLEAGUE: https://github.com/jonnyteronni/lab-advanced-mysql/blob/master/solutions.sql
+# with some slight changes I made
+WITH
+	temp1 AS (
+		SELECT tt.title_id,
+		ta.au_id,
+		tt.advance,
+		tt.price * sa.qty * tt.royalty / 100 * ta.royaltyper / 100 AS 'sales_royalties'
+		FROM titles AS tt
+		INNER JOIN sales AS sa
+			ON tt.title_id = sa.title_id
+		INNER JOIN titleauthor AS ta
+			ON tt.title_id = ta.title_id),
+		
+	temp2 AS (
+		SELECT temp1.advance, temp1.title_id, temp1.au_id, SUM(temp1.sales_royalties) AS total_sales
+		FROM temp1
+		GROUP BY 1, 2, 3)
+	
+		
+SELECT temp2.au_id, ROUND(SUM(temp2.advance) + SUM(temp2.total_sales), 4) AS 'profit'
+FROM temp2
+GROUP BY 1
+ORDER BY 2 DESC
+#LIMIT 3;</string>
+		<string># STEP 3 - Calculating the total profits of each author by aggregating the advance and total royalties of each title
+SELECT aut.au_id, CONCAT(aut.au_fname, ' ', aut.au_lname) AS 'author_name', ROUND(SUM((tt.price * sales.qty * tt.royalty / 100 * ta.royaltyper / 100) + tt.advance), 4) AS 'total_profits'
+FROM titleauthor AS ta
+INNER JOIN publications.authors AS aut
+	ON aut.au_id = ta.au_id
+INNER JOIN titles AS tt
+	ON tt.title_id = ta.title_id
+INNER JOIN sales
+	ON tt.title_id = sales.title_id
+GROUP BY 1
+#HAVING total_profits &gt; 10000  # extra filter we could apply here
+ORDER BY 3 DESC</string>
+		<string>#LIMIT 3; # getting the top 3 authors
+
+
+
+
+
+
+
+
+
+# THIS IS TOO COMPLEX FOR ME - FROM COLLEAGUE: https://github.com/jonnyteronni/lab-advanced-mysql/blob/master/solutions.sql
+# with some slight changes
+WITH
+	temp1 AS (
+		SELECT tt.title_id,
+		ta.au_id,
+		tt.advance,
+		tt.price * sa.qty * tt.royalty / 100 * ta.royaltyper / 100 AS 'sales_royalties'
+		FROM titles AS tt
+		INNER JOIN sales AS sa
+			ON tt.title_id = sa.title_id
+		INNER JOIN titleauthor AS ta
+			ON tt.title_id = ta.title_id),
+		
+	temp2 AS (
+		SELECT temp1.advance, temp1.title_id, temp1.au_id, SUM(temp1.sales_royalties) AS total_sales
+		FROM temp1
+		GROUP BY 1, 2, 3)
+	
+		
+SELECT temp2.au_id, ROUND(SUM(temp2.advance) + SUM(temp2.total_sales), 4) AS 'profit'
+FROM temp2
+GROUP BY 1
+ORDER BY 2 DESC
+LIMIT 3</string>
+		<string>#LIMIT 3; # getting the top 3 authors
+
+
+
+
+
+
+
+
+
+# THIS IS TOO COMPLEX FOR ME - FROM COLLEAGUE: https://github.com/jonnyteronni/lab-advanced-mysql/blob/master/solutions.sql
+# with some slight changes
+WITH
+	temp1 AS (
+		SELECT tt.title_id,
+		ta.au_id,
+		tt.advance,
+		tt.price * sa.qty * tt.royalty / 100 * ta.royaltyper / 100 AS 'sales_royalties'
+		FROM titles AS tt
+		INNER JOIN sales AS sa
+			ON tt.title_id = sa.title_id
+		INNER JOIN titleauthor AS ta
+			ON tt.title_id = ta.title_id),
+		
+	temp2 AS (
+		SELECT temp1.advance, temp1.title_id, temp1.au_id, SUM(temp1.sales_royalties) AS total_sales
+		FROM temp1
+		GROUP BY 1, 2, 3)
+	
+		
+SELECT temp2.au_id, ROUND(SUM(temp2.advance) + SUM(temp2.total_sales), 2) AS 'profit'
+FROM temp2
+GROUP BY 1
+ORDER BY 2 DESC
+LIMIT 3</string>
+		<string># STEP 3 - Calculating the total profits of each author by aggregating the advance and total royalties of each title
+SELECT aut.au_id, ROUND(SUM((tt.price * sales.qty * tt.royalty / 100 * ta.royaltyper / 100) + tt.advance), 4) AS 'total_profits', CONCAT(aut.au_fname, ' ', aut.au_lname) AS 'author_name'
+FROM titleauthor AS ta
+INNER JOIN publications.authors AS aut
+	ON aut.au_id = ta.au_id
+INNER JOIN titles AS tt
+	ON tt.title_id = ta.title_id
+INNER JOIN sales
+	ON tt.title_id = sales.title_id
+GROUP BY 1
+#HAVING total_profits &gt; 10000  # extra filter we could apply here
+ORDER BY 2 DESC</string>
+		<string># STEP 3 - Calculating the total profits of each author by aggregating the advance and total royalties of each title
+SELECT aut.au_id, ROUND(SUM((tt.price * sales.qty * tt.royalty / 100 * ta.royaltyper / 100) + tt.advance), 4) AS 'total_profits'#, CONCAT(aut.au_fname, ' ', aut.au_lname) AS 'author_name'
+FROM titleauthor AS ta
+INNER JOIN publications.authors AS aut
+	ON aut.au_id = ta.au_id
+INNER JOIN titles AS tt
+	ON tt.title_id = ta.title_id
+INNER JOIN sales
+	ON tt.title_id = sales.title_id
+GROUP BY 1
+#HAVING total_profits &gt; 10000  # extra filter we could apply here
+ORDER BY 2 DESC</string>
+	</array>
+	<key>rdbms_type</key>
+	<string>mysql</string>
+	<key>rdbms_version</key>
+	<string>8.0.19</string>
+	<key>version</key>
+	<integer>1</integer>
+</dict>
+</plist>
